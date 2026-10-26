@@ -9,8 +9,8 @@ import UIKit
 
 nonisolated enum Section { case drinks, food }
 
-class OrdersViewController: UIViewController, AddOrderDelegate,
-    EditOrderDelegate, UITableViewDelegate
+class OrdersViewController: UIViewController, OrderFormDelegate,
+    UITableViewDelegate
 {
     private let tableView = UITableView()
 
@@ -51,7 +51,7 @@ class OrdersViewController: UIViewController, AddOrderDelegate,
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             systemItem: .add,
-            primaryAction: UIAction { [weak self] _ in self?.showAdd() }
+            primaryAction: UIAction { [weak self] _ in self?.showForm() }
         )
     }
 
@@ -68,28 +68,25 @@ class OrdersViewController: UIViewController, AddOrderDelegate,
     }
 
 
-    private func showAdd() {
-        let addVC = AddOrderViewController()
-        addVC.delegate = self
+    private func showForm(for order: Order? = nil) {
+        let formVC = OrderFormViewController(order: order)
+        formVC.delegate = self
         present(
-            UINavigationController(rootViewController: addVC),
+            UINavigationController(rootViewController: formVC),
             animated: true
         )
     }
 
-    func didAdd(_ order: Order) {
-        orders.append(order)
-        save()
-        applySnapshot()
-    }
-
-    func didEdit(_ order: Order) {
-        guard let index = orders.firstIndex(where: { $0.id == order.id }) else {
-            return
+    func didSave(_ order: Order) {
+        if let index = orders.firstIndex(where: { $0.id == order.id }) {
+            orders[index] = order
+            save()
+            applySnapshot(reconfiguring: [order])
+        } else {
+            orders.append(order)
+            save()
+            applySnapshot()
         }
-        orders[index] = order
-        save()
-        applySnapshot(reconfiguring: [order])
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -97,12 +94,7 @@ class OrdersViewController: UIViewController, AddOrderDelegate,
         guard let order = dataSource.itemIdentifier(for: indexPath) else {
             return
         }
-        let editVC = EditOrderViewController(order: order)
-        editVC.delegate = self
-        present(
-            UINavigationController(rootViewController: editVC),
-            animated: true
-        )
+        showForm(for: order)
     }
 
     private let fileURL = URL.documentsDirectory.appending(path: "orders.json")
