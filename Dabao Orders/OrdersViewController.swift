@@ -55,7 +55,7 @@ class OrdersViewController: UIViewController, AddOrderDelegate,
         )
     }
 
-    private func applySnapshot() {
+    private func applySnapshot(reconfiguring changed: [Order] = []) {
         var snapshot = NSDiffableDataSourceSnapshot<Section, Order>()
         snapshot.appendSections([.drinks, .food])
 
@@ -63,8 +63,10 @@ class OrdersViewController: UIViewController, AddOrderDelegate,
         snapshot.appendItems(grouped[true] ?? [], toSection: .drinks)
         snapshot.appendItems(grouped[false] ?? [], toSection: .food)
 
+        snapshot.reconfigureItems(changed)
         dataSource.apply(snapshot, animatingDifferences: true)
     }
+
 
     private func showAdd() {
         let addVC = AddOrderViewController()
@@ -87,7 +89,7 @@ class OrdersViewController: UIViewController, AddOrderDelegate,
         }
         orders[index] = order
         save()
-        applySnapshot()
+        applySnapshot(reconfiguring: [order])
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
